@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Coin Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .coin {
+            width: 80px;
+            height: 80px;
+            background-color: gold;
+            border-radius: 50%;
+            display: inline-block;
+            line-height: 80px;
+            font-size: 20px;
+            cursor: grab;
+            margin: 10px;
+            user-select: none;
+        }
+        .players {
+            margin-top: 20px;
+        }
+        .player {
+            display: inline-block;
+            width: 180px;
+            height: 180px;
+            border: 2px solid black;
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            position: relative;
+        }
+        .player span {
+            display: block;
+            margin-top: 10px;
+        }
+        #player1, #player2, #player3 {
+            display: inline-block;
+            width: 150px;
+            height: 150px;
+            border: 2px solid #000;
+            padding: 20px;
+            font-size: 16px;
+            position: relative;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+        }
+        #message {
+            color: red;
+            font-size: 16px;
+            margin-top: 10px;
+            visibility: hidden;
+        }
+        #final-message {
+            display: none;
+            font-size: 18px;
+            color: green;
+            margin-top: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Drag the Coins to Distribute £0.40</h2>
+
+    <!-- Coin Container -->
+    <div id="coin-container">
+        <div class="coin" draggable="true" ondragstart="drag(event)" id="coin1">£0.10</div>
+        <div class="coin" draggable="true" ondragstart="drag(event)" id="coin2">£0.10</div>
+        <div class="coin" draggable="true" ondragstart="drag(event)" id="coin3">£0.10</div>
+        <div class="coin" draggable="true" ondragstart="drag(event)" id="coin4">£0.10</div>
+    </div>
+
+    <!-- Player Status -->
+    <div class="players">
+        <div id="player1" class="player" ondrop="drop(event, 'player1')" ondragover="allowDrop(event)">
+            Player 1
+            <span>Starting £0.20</span>
+            <span>Current has: £<span id="player1-points">0.20</span></span>
+        </div>
+        <div id="player2" class="player" ondrop="drop(event, 'player2')" ondragover="allowDrop(event)">
+            Player 2
+            <span>Starting £0.60</span>
+            <span>Current has: £<span id="player2-points">0.60</span></span>
+        </div>
+        <div id="player3" class="player">
+            Player 3 (You)
+            <span>Starting £0.40</span>
+            <span>Remaining: £<span id="player3-remaining">0.40</span></span>
+            <span>Base Pay: £0.60</span>
+        </div>
+    </div>
+
+    <!-- Reset and Finish Buttons -->
+    <button onclick="resetGame()">Reset Game</button>
+    <button onclick="finishGame()">Finish</button>
+
+    <!-- Message for Player 3 -->
+    <div id="message">You have to spend all £0.40</div>
+
+    <!-- Final Message -->
+    <div id="final-message"></div>
+
+    <script>
+        // Initial points
+        let player1Points = 0.20;
+        let player2Points = 0.60;
+        let player3Remaining = 0.40;
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            event.dataTransfer.setData("coinId", event.target.id);
+        }
+
+        function drop(event, player) {
+            event.preventDefault();
+            let coinId = event.dataTransfer.getData("coinId");
+            let coin = document.getElementById(coinId);
+
+            // Handling the drag and drop logic based on which player the coin is dropped on
+            if (player === "player1" && player3Remaining >= 0.10) {
+                player1Points += 0.10;
+                player3Remaining -= 0.10;
+            } else if (player === "player2" && player3Remaining >= 0.10) {
+                player2Points -= 0.10;
+                player3Remaining -= 0.10;
+            }
+
+            // Update the points and remaining coins
+            updatePoints();
+            coin.remove();  // Remove the coin after use
+
+            // Check if all coins are allocated and show the final message
+            if (player3Remaining.toFixed(2) === "0.00") {
+                showFinalMessage();
+            }
+        }
+
+        function updatePoints() {
+            document.getElementById('player1-points').textContent = player1Points.toFixed(2);
+            document.getElementById('player2-points').textContent = player2Points.toFixed(2);
+            document.getElementById('player3-remaining').textContent = player3Remaining.toFixed(2);
+        }
+
+        function resetGame() {
+            // Reset points and remaining coins
+            player1Points = 0.20;
+            player2Points = 0.60;
+            player3Remaining = 0.40;
+
+            // Update the player points display
+            updatePoints();
+
+            // Recreate the coins
+            let coinContainer = document.getElementById('coin-container');
+            coinContainer.innerHTML = `
+                <div class="coin" draggable="true" ondragstart="drag(event)" id="coin1">£0.10</div>
+                <div class="coin" draggable="true" ondragstart="drag(event)" id="coin2">£0.10</div>
+                <div class="coin" draggable="true" ondragstart="drag(event)" id="coin3">£0.10</div>
+                <div class="coin" draggable="true" ondragstart="drag(event)" id="coin4">£0.10</div>
+            `;
+
+            // Hide the final message and reset message visibility
+            document.getElementById('final-message').style.display = 'none';
+            document.getElementById('message').style.visibility = 'hidden';
+        }
+
+        function finishGame() {
+            if (player3Remaining > 0) {
+                // Show the error message to alert that coins are not fully allocated
+                let message = document.getElementById('message');
+                message.style.visibility = 'visible';
+                
+                // Hide the message after 5 seconds
+                setTimeout(function() {
+                    message.style.visibility = 'hidden';
+                }, 5000);
+            }
+        }
+
+        function showFinalMessage() {
+            // Automatically show final message when all coins are allocated
+            const finalMessage = `You've finished this game! Now Player 1 has £${player1Points.toFixed(2)}, and Player 2 has £${player2Points.toFixed(2)}.`;
+            document.getElementById('final-message').textContent = finalMessage;
+            document.getElementById('final-message').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
